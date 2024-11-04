@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}
+HOME
+{% endblock %}
+
+
+<h1>{{ error }}</h1>
+
+
+{% block content %}
+<body>
+    <main class="container">
+        <section class="crypto-list">
+            <h2>Add Crypto Currency</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Add</button>
+            </form>
+        </section>
+    </main>
+</body>
+{% endblock %}

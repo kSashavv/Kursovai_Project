@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+Войти
+{% endblock %}
+{% block content %}
+{% block style %} href="{% static 'style1.css' %}" {% endblock %}
+<body>
+    <form method="post" class="centered-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Войти</button>
+    </form>
+</body>
+{% endblock %}

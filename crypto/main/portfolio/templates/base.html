@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}#{% endblock %}</title>
+    <link rel="stylesheet" {% block style %} href="{% static 'style1.css' %}" {% endblock %}>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+
+<body>
+<header>
+    <nav>
+        <ul>
+            <li><a href="{% url 'home' %}">Главная</a></li>
+            {% if request.user.is_authenticated %}
+            <li><a href="{% url 'portfolio' %}">Личный кабинет</a></li>
+            <li><a href="{% url 'logout' %}">Выйти</a></li>
+            <li>{{ user.username }}</li>
+            {% else %}
+            <li><a href="{% url 'regis' %}">Регистрация</a></li>
+            <li><a href="{% url 'login' %}">Войти</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>
+{% block content %}
+
+{% endblock %}
+
+
+<footer>
+    <div class="container">
+        <p>&copy; 2024 Crypto Currency Evaluation</p>
+    </div>
+</footer>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            ajax: {
+                url: "{% url 'search_coins' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term, // search term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results,
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+        });
+    });
+</script>
