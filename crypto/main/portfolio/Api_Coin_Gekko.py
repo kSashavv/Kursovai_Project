@@ -108,8 +108,6 @@ def portfolio():
 ############################## PosgreSQL ###############################
 
 
-
-
 conn_params = {
     'dbname': 'postgres_django',
     'user': 'postgres',
@@ -129,6 +127,29 @@ def connect():
         exit()
 
 
+# id_list = range(15058, 15071 + 1)
+# print(id_list)
+# conn = connect()
+# try:
+#     with conn.cursor() as cursor:
+#         for i in range(15072, 15058, -1):
+#             cursor.execute(f"""
+#                 DELETE FROM portfolio_coinlist
+#                 WHERE id = {i};
+#             """)
+#         conn.commit()
+#         print("Данные успешно удалены из таблицы")
+# except psycopg2.Error as e:
+#     print(f"Ошибка при удалении данных: {e}")
+#     conn.rollback()
+#
+# conn.close()
+
+# DELETE
+# FROM < имя_таблицы >
+# WHERE
+# id = < значение_id >;
+# print(i)
 # print(data)
 # for i in data:
 #     print(i['id'], i['symbol'], i['name'])
@@ -152,3 +173,19 @@ def connect():
 # conn = connect()
 # insert_data(conn, data)
 # conn.close()
+
+# coins = coins_list()
+# for i in coins:
+#     if i['id'] == 'the-open-network':
+#         print(i)
+# print(coins)
+# conn = connect()
+# cursor = conn.cursor()
+# cursor.execute("""
+#                      INSERT INTO portfolio_coinlist (currency_id, symbol, name)
+#                      VALUES (%s, %s, %s);
+#                  """, ('the-open-network', 'ton', 'Toncoin'))
+# conn.commit()
+# conn.close()
+# price = coin_price('the-open-network')
+# print(price)

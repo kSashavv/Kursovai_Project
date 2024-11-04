@@ -1,5 +1,6 @@
 from django.contrib.auth import login, authenticate, logout
 from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
 from .forms import CustomUserForm, CustomAuthentication, PortfolioForm
@@ -23,7 +24,10 @@ from .models import CoinList, Portfolio
 
 
 def home(request):
-    portfolio, created = Portfolio.objects.get_or_create(user=request.user)
+    if request.user.is_authenticated:
+        portfolio, created = Portfolio.objects.get_or_create(user=request.user)
+    else:
+        return redirect('regis')
 
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
@@ -114,5 +118,9 @@ def _logout(request):
     return redirect('home')
 
 
+@login_required
 def portfolio(request):
-    return HttpResponse('portfolio')
+    portfolio = Portfolio.objects.get(user=request.user)
+    coins = portfolio.coins.all()
+    print(coins)
+    return render(request, 'portfolio.html', {'coins': coins})
