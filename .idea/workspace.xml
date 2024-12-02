@@ -5,22 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="97e874a2-d1f0-450d-8c18-e43945aa1837" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/crypto/main/db.sqlite3" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/crypto/main/portfolio/migrations/0004_portfoliocoin.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/crypto/main/portfolio/migrations/0005_portfoliocoin_price.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/profile.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/crypto/main/static/profile_style.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crypto/main/portfolio/cron.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crypto/main/portfolio/tasks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/crypto/main/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/main/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/Api_Coin_Gekko.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/Api_Coin_Gekko.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/currency_data.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/forms.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/templates/AuthenticationForm.html" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/AuthenticationForm.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/templates/UserCreationForm.html" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/UserCreationForm.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/base.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/home.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/templates/profile.html" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/templates/profile.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/crypto/main/portfolio/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/portfolio/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crypto/main/static/style1.css" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/static/style1.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crypto/main/static/profile_style.css" beforeDir="false" afterPath="$PROJECT_DIR$/crypto/main/static/profile_style.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,8 +23,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>

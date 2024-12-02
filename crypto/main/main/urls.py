@@ -29,6 +29,11 @@ urlpatterns = [
     path('portfolio/', views.portfolio, name='portfolio'),
     path('search-coins/', views.search_coins, name='search_coins'),
     path('profile/', views.profile, name='profile'),
+    path('update-coin/', views.update_coin, name='update_coin'),
+    path('sell-coin/', views.sell_coin, name='sell_coin'),
+    path('manage_coin/', views.manage_coin, name='manage_coin'),
+    path('get_portfolio_history/', views.get_portfolio_history, name='get_portfolio_history'),
+    path('get_bitcoin_price_history/', views.get_bitcoin_price_history, name='get_bitcoin_price_history'),
 ]
 
 if settings.DEBUG:

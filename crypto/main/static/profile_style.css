@@ -134,5 +134,19 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
+}
 
+/* Стили для контейнера графиков */
+.chart-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Стили для элементов <canvas> */
+#portfolioChart, #pieChart {
+    width: 100%;
+    height: auto;
+    max-height: 400px; /* Добавьте максимальную высоту */
+    margin-bottom: 70px
 }

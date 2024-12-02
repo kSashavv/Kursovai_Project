@@ -1,17 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}Ваш портфель{% endblock %}
-{% block style %} <link rel="stylesheet" href="{% static 'profile_style.css' %}">{% endblock %}
-
-
+{% block style %}
+<link rel="stylesheet" href="{% static 'profile_style.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="portfolio-container">
     {% if error %}
     <p class="error-message">{{ error }}</p>
     {% else %}
+    <!-- Заголовок -->
     <h1 class="portfolio-title">Портфель пользователя {{ portfolio.user.username }}</h1>
 
+    <!-- Таблица с данными портфеля -->
     <table class="portfolio-table">
         <thead>
             <tr>
@@ -33,9 +35,129 @@
         </tbody>
     </table>
 
+    <!-- Форма для управления монетами -->
+    <form method="post" action="{% url 'manage_coin' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <!-- Выпадающий список для выбора монеты -->
+            <label for="coin_id">Выберите монету:</label>
+            <select id="coin_id" name="coin_id" required>
+                {% for coin in portfolio_coins %}
+                <option value="{{ coin.coin.id }}">{{ coin.coin.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <!-- Поле для ввода количества -->
+            <label for="amount">Количество:</label>
+            <input type="number" step="any" id="amount" name="amount" placeholder="Введите количество" required>
+        </div>
+
+        <div class="form-actions">
+            <!-- Кнопки действий -->
+            <button type="submit" name="action" value="update">Обновить</button>
+            <button type="submit" name="action" value="sell">Продать</button>
+        </div>
+    </form>
+
+    <!-- Отображение общей стоимости портфеля -->
     <div class="total-value">
         <h3>Общая стоимость портфеля: ${{ total_value|floatformat:3 }}</h3>
     </div>
     {% endif %}
 </div>
+
+<!-- Графики -->
+<div class="chart-container">
+    <h2>График изменения стоимости портфеля</h2>
+    <canvas id="portfolioChart"></canvas>
+</div>
+<div class="chart-container">
+    <h2>График тренда Bitcoin</h2>
+    <canvas id="bitcoinChart"></canvas>
+</div>
+<div class="chart-container">
+    <h2>Распределение активов</h2>
+    <canvas id="pieChart"></canvas>
+</div>
+
+
+<!-- Подключение Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Функция для обновления графика
+    function updateChart(data, chartId) {
+        var chart = Chart.getChart(chartId);
+        chart.data.labels = data.timestamps;
+        chart.data.datasets[0].data = data.values;
+        chart.update();
+    }
+
+    // Функция для первоначальной загрузки данных и инициализации графика
+    function initChart(url, chartId, chartType, label) {
+        $.ajax({
+            url: url,
+            method: "GET",
+            success: function(data) {
+                console.log("Initial data:", data);
+                // Инициализация графика с первоначальными данными
+                var ctx = document.getElementById(chartId).getContext('2d');
+                new Chart(ctx, {
+                    type: chartType,
+                    data: {
+                        labels: data.timestamps,
+                        datasets: [{
+                            label: label,
+                            data: data.values,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            tension: 0.1
+                        }]
+                    }
+                });
+            }
+        });
+    }
+
+    // Обновление графика каждые 5 секунд
+    setInterval(function() {
+        $.ajax({
+            url: "{% url 'get_portfolio_history' %}",
+            method: "GET",
+            success: function(data) {
+                console.log("Updating data:", data);
+                updateChart(data, 'portfolioChart');
+            }
+        });
+        $.ajax({
+            url: "{% url 'get_bitcoin_price_history' %}",
+            method: "GET",
+            success: function(data) {
+                console.log("Updating Bitcoin data:", data);
+                updateChart(data, 'bitcoinChart');
+            }
+        });
+    }, 5000);
+
+    // Инициализация графиков при загрузке страницы
+    $(document).ready(function() {
+        initChart("{% url 'get_portfolio_history' %}", 'portfolioChart', 'line', 'Стоимость портфеля');
+        initChart("{% url 'get_bitcoin_price_history' %}", 'bitcoinChart', 'line', 'Bitcoin Price');
+
+        // График распределения активов
+        var pieCtx = document.getElementById('pieChart').getContext('2d');
+        var pieData = {{ pie_data|safe }};
+        var pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: pieData.labels,
+                datasets: [{
+                    data: pieData.values,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                }]
+            }
+        });
+    });
+</script>
 {% endblock %}

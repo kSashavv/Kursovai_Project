@@ -1,13 +1,20 @@
 from django.contrib.auth import login, authenticate, logout
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import CustomUserForm, CustomAuthentication, PortfolioCoinForm
-from .models import CoinList, Portfolio, PortfolioCoin
+from .models import CoinList, Portfolio, PortfolioCoin, Coin
 import requests
 from django.core.cache import cache
 from .Api_Coin_Gekko import coin_price
 from decimal import Decimal
+from .models import PortfolioHistory
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.contrib import messages
+from django.utils import timezone
 
 
 def get_portfolio_value(portfolio):
@@ -67,11 +74,23 @@ def home(request):
     return render(request, 'home.html', {'form': form})
 
 
+def update_portfolio_history(portfolio, total_value):
+    PortfolioHistory.objects.create(
+        portfolio=portfolio,
+        total_value=total_value,
+        timestamp=timezone.now()
+    )
+
+
+@login_required
 def profile(request):
     if not request.user.is_authenticated:
         return redirect('regis')  # Редирект, если пользователь не авторизован
 
     portfolio = Portfolio.objects.filter(user=request.user).first()
+
+    if not portfolio:
+        return HttpResponseBadRequest("Портфель не найден")
 
     # Используем правильный способ получения связанных объектов
     portfolio_coins = PortfolioCoin.objects.filter(portfolio=portfolio)
@@ -102,13 +121,169 @@ def profile(request):
         portfolio_coin.total_value for portfolio_coin in portfolio_coins if portfolio_coin.price
     )
 
+    # Обновляем историю портфеля
+    update_portfolio_history(portfolio, total_value)
+
+    # Обработка POST-запроса
+    if request.method == 'POST':
+        coin_id = request.POST.get('coin_id')
+        amount = Decimal(request.POST.get('amount'))
+        action = request.POST.get('action')
+
+        try:
+            portfolio_coin = portfolio_coins.get(coin__id=coin_id)
+        except PortfolioCoin.DoesNotExist:
+            return HttpResponseBadRequest("Монета не найдена в портфеле")
+
+        if action == 'update':
+            portfolio_coin.amount = amount
+            portfolio_coin.save()
+        elif action == 'sell':
+            if portfolio_coin.amount < amount:
+                return HttpResponseBadRequest("Недостаточно монет для продажи")
+            elif portfolio_coin.amount == amount:
+                portfolio_coin.delete()
+            else:
+                portfolio_coin.amount -= amount
+                portfolio_coin.save()
+
+        return redirect('profile')
+
     context = {
         'portfolio': portfolio,
         'portfolio_coins': portfolio_coins,
         'total_value': total_value,
     }
 
+    history = PortfolioHistory.objects.filter(portfolio=portfolio).order_by('timestamp')
+    history_data = {
+        'timestamps': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in history],
+        'values': [float(entry.total_value) for entry in history]
+    }
+    context['history_data'] = json.dumps(history_data, cls=DjangoJSONEncoder)
+
+    pie_data = {
+        'labels': [coin.coin.name for coin in portfolio_coins],
+        'values': [float(coin.total_value) for coin in portfolio_coins if coin.total_value]
+    }
+    context['pie_data'] = json.dumps(pie_data)
+
     return render(request, 'profile.html', context)
+
+    # if not request.user.is_authenticated:
+    #     return redirect('regis')  # Редирект, если пользователь не авторизован
+    #
+    # portfolio = Portfolio.objects.filter(user=request.user).first()
+    #
+    # if not portfolio:
+    #     return HttpResponseBadRequest("Портфель не найден")
+    #
+    # # Используем правильный способ получения связанных объектов
+    # portfolio_coins = PortfolioCoin.objects.filter(portfolio=portfolio)
+    #
+    # # Получаем цену для каждой монеты
+    # for portfolio_coin in portfolio_coins:
+    #     coin_id = portfolio_coin.coin.currency_id  # Уникальный идентификатор монеты
+    #     try:
+    #         # Получаем цену с помощью функции coin_price_cached
+    #         price_data = coin_price_cached(coin_id)
+    #         if not price_data:  # Если данные пустые, пропускаем
+    #             print(f"Не удалось получить данные для {coin_id}. Пропускаем...")
+    #             continue
+    #
+    #         price = Decimal(price_data.get(coin_id, {}).get('usd', 0))  # Преобразуем в Decimal
+    #
+    #         # Обновляем цену в модели PortfolioCoin
+    #         portfolio_coin.price = price
+    #         portfolio_coin.save()
+    #
+    #         # Добавляем атрибут `total_value` для удобства
+    #         portfolio_coin.total_value = portfolio_coin.amount * portfolio_coin.price
+    #     except Exception as e:
+    #         print(f"Ошибка получения цены для {coin_id}: {e}")
+    #
+    # # Расчет общей стоимости портфеля
+    # total_value = sum(
+    #     portfolio_coin.total_value for portfolio_coin in portfolio_coins if portfolio_coin.price
+    # )
+    #
+    # # Обработка POST-запроса
+    # if request.method == 'POST':
+    #     coin_id = request.POST.get('coin_id')
+    #     amount = Decimal(request.POST.get('amount'))
+    #     action = request.POST.get('action')
+    #
+    #     try:
+    #         portfolio_coin = portfolio_coins.get(coin__id=coin_id)
+    #     except PortfolioCoin.DoesNotExist:
+    #         return HttpResponseBadRequest("Монета не найдена в портфеле")
+    #
+    #     if action == 'update':
+    #         portfolio_coin.amount = amount
+    #         portfolio_coin.save()
+    #     elif action == 'sell':
+    #         if portfolio_coin.amount < amount:
+    #             return HttpResponseBadRequest("Недостаточно монет для продажи")
+    #         elif portfolio_coin.amount == amount:
+    #             portfolio_coin.delete()
+    #         else:
+    #             portfolio_coin.amount -= amount
+    #             portfolio_coin.save()
+    #
+    #     return redirect('profile')
+    #
+    # context = {
+    #     'portfolio': portfolio,
+    #     'portfolio_coins': portfolio_coins,
+    #     'total_value': total_value,
+    # }
+    #
+    # history = PortfolioHistory.objects.filter(portfolio=portfolio).order_by('timestamp')
+    # history_data = {
+    #     'timestamps': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in history],
+    #     'values': [float(entry.total_value) for entry in history]
+    # }
+    # context['history_data'] = json.dumps(history_data, cls=DjangoJSONEncoder)
+    #
+    # pie_data = {
+    #     'labels': [coin.coin.name for coin in portfolio_coins],
+    #     'values': [float(coin.total_value) for coin in portfolio_coins if coin.total_value]
+    # }
+    # context['pie_data'] = json.dumps(pie_data)
+    #
+    # return render(request, 'profile.html', context)
+
+
+@require_POST
+@login_required
+def update_coin(request):
+    coin_id = request.POST.get('coin_id')
+    new_amount = request.POST.get('new_amount')
+
+    portfolio = get_object_or_404(Portfolio, user=request.user)
+    try:
+        portfolio_coin = PortfolioCoin.objects.get(portfolio=portfolio, coin__id=coin_id)
+        portfolio_coin.amount = Decimal(new_amount)
+        portfolio_coin.save()
+    except PortfolioCoin.DoesNotExist:
+        return JsonResponse({'error': 'Актив не найден'}, status=400)
+
+    return redirect('profile')
+
+
+@require_POST
+@login_required
+def sell_coin(request):
+    coin_id = request.POST.get('coin_id')
+
+    portfolio = get_object_or_404(Portfolio, user=request.user)
+    try:
+        portfolio_coin = PortfolioCoin.objects.get(portfolio=portfolio, coin__id=coin_id)
+        portfolio_coin.delete()  # Удаляем актив из портфеля
+    except PortfolioCoin.DoesNotExist:
+        return JsonResponse({'error': 'Актив не найден'}, status=400)
+
+    return redirect('profile')
 
 
 def coin_price_cached(currency_id):
@@ -176,3 +351,76 @@ def portfolio(request):
     coins = portfolio.coins.all()
     print(coins)
     return render(request, 'portfolio.html', {'coins': coins})
+
+
+def manage_coin(request):
+    if request.method == 'POST':
+        coin_id = request.POST.get('coin_id')
+        amount = Decimal(request.POST.get('amount'))
+        action = request.POST.get('action')
+
+        portfolio = Portfolio.objects.filter(user=request.user).first()
+
+        if not portfolio:
+            return HttpResponseBadRequest("Портфель не найден")
+
+        try:
+            portfolio_coin = PortfolioCoin.objects.get(portfolio=portfolio, coin__id=coin_id)
+        except PortfolioCoin.DoesNotExist:
+            return HttpResponseBadRequest("Монета не найдена в портфеле")
+
+        if action == 'update':
+            portfolio_coin.amount = amount
+            portfolio_coin.save()
+        elif action == 'sell':
+            if portfolio_coin.amount < amount:
+                return HttpResponseBadRequest("Недостаточно монет для продажи")
+            elif portfolio_coin.amount == amount:
+                portfolio_coin.delete()
+            else:
+                portfolio_coin.amount -= amount
+                portfolio_coin.save()
+
+        return redirect('profile')
+
+    return HttpResponseBadRequest("Неверный метод запроса")
+
+
+def get_portfolio_history(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Пользователь не авторизован"}, status=401)
+
+    portfolio = Portfolio.objects.filter(user=request.user).first()
+
+    if not portfolio:
+        return JsonResponse({"error": "Портфель не найден"}, status=404)
+
+    history = PortfolioHistory.objects.filter(portfolio=portfolio).order_by('timestamp')
+    history_data = {
+        'timestamps': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in history],
+        'values': [float(entry.total_value) for entry in history]
+    }
+    print(history_data)
+
+    return JsonResponse(history_data)
+
+def get_bitcoin_price_history(request):
+    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
+    params = {
+        'vs_currency': 'usd',
+        'days': '60',  # Получаем данные за последние 60 дней
+        'interval': 'daily'
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    prices = data['prices']
+    timestamps = [price[0] for price in prices]
+    values = [price[1] for price in prices]
+
+    history_data = {
+        'timestamps': timestamps,
+        'values': values
+    }
+
+    return JsonResponse(history_data)
