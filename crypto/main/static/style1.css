@@ -226,3 +226,48 @@ img {
 .centered-form button:hover {
     background-color: #0056b3;
 }
+
+#####################
+
+main {
+    flex: 1;
+    padding: 100px 20px 60px; /* Учитываем высоту header и footer */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 60px; /* Отступ сверху равен высоте header */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse; /* Устраняет двойные границы */
+}
+
+th, td {
+    border: 1px solid #ccc; /* Добавляет границы */
+    padding: 8px;
+    text-align: center;
+}
+
+thead th {
+    background-color: #f4f4f4; /* Добавляем контраст */
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse; /* Устраняет двойные границы */
+}
+
+th, td {
+    border: 1px solid #ccc; /* Добавляет границы */
+    padding: 8px;
+    text-align: center;
+}
+
+thead th {
+    background-color: #f4f4f4; /* Добавляем контраст */
+}
+
+
+

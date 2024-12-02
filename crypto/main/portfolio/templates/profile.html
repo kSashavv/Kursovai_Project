@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Ваш портфель{% endblock %}
+{% block style %} <link rel="stylesheet" href="{% static 'profile_style.css' %}">{% endblock %}
+
+
+
+{% block content %}
+<div class="portfolio-container">
+    {% if error %}
+    <p class="error-message">{{ error }}</p>
+    {% else %}
+    <h1 class="portfolio-title">Портфель пользователя {{ portfolio.user.username }}</h1>
+
+    <table class="portfolio-table">
+        <thead>
+            <tr>
+                <th>Монета</th>
+                <th>Количество</th>
+                <th>Цена (USD)</th>
+                <th>Общая стоимость (USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for coin in portfolio_coins %}
+            <tr>
+                <td>{{ coin.coin.name }}</td>
+                <td>{{ coin.amount|floatformat:3 }}</td>
+                <td>${{ coin.price|floatformat:3 }}</td>
+                <td>${{ coin.total_value|floatformat:3 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-value">
+        <h3>Общая стоимость портфеля: ${{ total_value|floatformat:3 }}</h3>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

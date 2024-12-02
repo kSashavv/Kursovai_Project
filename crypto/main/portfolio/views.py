@@ -1,58 +1,135 @@
 from django.contrib.auth import login, authenticate, logout
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from .forms import CustomUserForm, CustomAuthentication, PortfolioCoinForm
+from .models import CoinList, Portfolio, PortfolioCoin
+import requests
+from django.core.cache import cache
+from .Api_Coin_Gekko import coin_price
+from decimal import Decimal
 
-from .forms import CustomUserForm, CustomAuthentication, PortfolioForm
-from .models import CoinList, Portfolio
 
-
-# def home(request):
-#     cryptos = CoinList.objects.all()
-#     if request.method == 'POST':
-#         form = CryptoCurrencyForm(request.POST)
-#         currency_id = request.POST.get('name')
-#         price = Api_Coin_Gekko.coin_price(currency_id)
-#         if form.is_valid():
-#             form.save()
-#             print(price)
-#             return render(request, 'home.html', {'form': form, 'cryptos': cryptos, 'price': price})
-#     else:
-#         form = CryptoCurrencyForm()
-#
-#         return render(request, 'home.html', {'form': form, 'cryptos': cryptos})
+def get_portfolio_value(portfolio):
+    base_url = 'https://api.coingecko.com/api/v3/simple/price'
+    symbols = [coin.coin.symbol for coin in PortfolioCoin.objects.filter(portfolio=portfolio)]
+    query_params = {
+        'ids': ','.join(symbols),
+        'vs_currencies': 'usd'
+    }
+    response = requests.get(base_url, params=query_params)
+    if response.status_code == 200:
+        prices = response.json()
+        total_value = 0
+        detailed_values = []
+        for coin in PortfolioCoin.objects.filter(portfolio=portfolio):
+            coin_price = prices.get(coin.coin.symbol, {}).get('usd', 0)
+            coin_value = coin.amount * coin_price
+            total_value += coin_value
+            detailed_values.append({
+                'coin': coin.coin.name,
+                'symbol': coin.coin.symbol,
+                'amount': coin.amount,
+                'price': coin_price,
+                'value': coin_value
+            })
+        return total_value, detailed_values
+    else:
+        return 0, []
 
 
 def home(request):
-    if request.user.is_authenticated:
-        portfolio, created = Portfolio.objects.get_or_create(user=request.user)
-    else:
-        return redirect('regis')
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    portfolio, created = Portfolio.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        form = PortfolioForm(request.POST)
+        form = PortfolioCoinForm(request.POST)
         if form.is_valid():
-            # portfolio_save = form.save(commit=False)  # Временное сохранение объекта
-            # portfolio_save.user = request.user  # Присваиваем текущего пользователя
-            # portfolio_save.save()  # Сохраняем объект в базе данных
-            coins = form.cleaned_data['coins']
-            for coin in coins:
-                portfolio.coins.add(coin)
-            # portfolio_data = Portfolio.objects.all(user_id=request.user)
-            # print(portfolio_data.coins)
-            return redirect('home')
-            # return render(request, 'home.html', {'form': form})
+            coins = form.cleaned_data['coin']  # Получаем список выбранных монет
+            amount = form.cleaned_data['amount']
+
+            for coin in coins:  # Перебираем монеты и сохраняем их по одной
+                PortfolioCoin.objects.update_or_create(
+                    portfolio=portfolio,
+                    coin=coin,
+                    defaults={'amount': amount}
+                )
+            return redirect('profile')  # Перенаправление в личный кабинет
+
         else:
-            return render(request, 'home.html', {'form': form, 'error': 'Что-то не так'})
+            return render(request, 'home.html', {'form': form, 'error': 'Invalid input'})
+
     else:
-        form = PortfolioForm()
-        return render(request, 'home.html', {'form': form})
+        form = PortfolioCoinForm()
+
+    return render(request, 'home.html', {'form': form})
+
+
+def profile(request):
+    if not request.user.is_authenticated:
+        return redirect('regis')  # Редирект, если пользователь не авторизован
+
+    portfolio = Portfolio.objects.filter(user=request.user).first()
+
+    # Используем правильный способ получения связанных объектов
+    portfolio_coins = PortfolioCoin.objects.filter(portfolio=portfolio)
+
+    # Получаем цену для каждой монеты
+    for portfolio_coin in portfolio_coins:
+        coin_id = portfolio_coin.coin.currency_id  # Уникальный идентификатор монеты
+        try:
+            # Получаем цену с помощью функции coin_price_cached
+            price_data = coin_price_cached(coin_id)
+            if not price_data:  # Если данные пустые, пропускаем
+                print(f"Не удалось получить данные для {coin_id}. Пропускаем...")
+                continue
+
+            price = Decimal(price_data.get(coin_id, {}).get('usd', 0))  # Преобразуем в Decimal
+
+            # Обновляем цену в модели PortfolioCoin
+            portfolio_coin.price = price
+            portfolio_coin.save()
+
+            # Добавляем атрибут `total_value` для удобства
+            portfolio_coin.total_value = portfolio_coin.amount * portfolio_coin.price
+        except Exception as e:
+            print(f"Ошибка получения цены для {coin_id}: {e}")
+
+    # Расчет общей стоимости портфеля
+    total_value = sum(
+        portfolio_coin.total_value for portfolio_coin in portfolio_coins if portfolio_coin.price
+    )
+
+    context = {
+        'portfolio': portfolio,
+        'portfolio_coins': portfolio_coins,
+        'total_value': total_value,
+    }
+
+    return render(request, 'profile.html', context)
+
+
+def coin_price_cached(currency_id):
+    cache_key = f"coin_price_{currency_id}"
+    price_data = cache.get(cache_key)  # Получаем данные из кэша
+
+    if price_data is None:  # Если данных нет, запрашиваем через API
+        price_data = coin_price(currency_id)  # Функция возвращает полный словарь
+        if price_data:  # Если словарь не пустой
+            cache.set(cache_key, price_data, timeout=300)  # Кэшируем полный словарь на 5 минут
+        else:
+            print(f"Не удалось получить данные для {currency_id}, кэширование пропущено.")
+            return {}
+
+    return price_data  # Возвращаем словарь или пустой объект
 
 
 def search_coins(request):
-    query = request.GET.get('q', '')
-    coins = CoinList.objects.filter(name__icontains=query)[:10]  # Ограничиваем количество результатов
-    results = [{'id': coin.id, 'text': coin.name} for coin in coins]
+    query = request.GET.get('q', '')  # Получаем текст из запроса
+    coins = CoinList.objects.filter(name__icontains=query)[:10]  # Ограничиваем результаты
+    results = [{'id': coin.id, 'text': coin.name} for coin in coins]  # Формат JSON
     return JsonResponse({'results': results})
 
 
@@ -61,10 +138,6 @@ def UserCreation(request):
         form = CustomUserForm(request.POST)
         if form.is_valid():
             user_save = form.save()
-            # user = form.cleaned_data.get('username')
-            # password = form.cleaned_data.get('password')
-            # aunt = authenticate(username=user, password=password)
-            # login(request, aunt)
             login(request, user_save)
             return redirect('home')
         else:
@@ -90,27 +163,6 @@ def Authenticate(request):
     else:
         form = CustomAuthentication()
         return render(request, 'AuthenticationForm.html', {'form': form})
-
-
-# def Authenticate(request):
-#     if request.method == 'POST':
-#         form = CustomAuthentication(request, data=request.POST)
-#         if form.is_valid():
-#             username = form.cleaned_data.get('username')
-#             password = form.cleaned_data.get('password')
-#             user = authenticate(request, username=username, password=password)
-#             if user is not None:
-#                 login(request, user)
-#                 return redirect('home')
-#             else:
-#                 print('#####################')
-#                 print('Error: Invalid username or password')
-#         else:
-#             print('#####################')
-#             print('Error: Form is not valid')
-#     else:
-#         form = CustomAuthentication()
-#     return render(request, 'AuthenticationForm.html', {'form': form})
 
 
 def _logout(request):

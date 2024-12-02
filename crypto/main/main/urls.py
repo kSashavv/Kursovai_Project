@@ -28,6 +28,7 @@ urlpatterns = [
     path('logout/', views._logout, name='logout'),
     path('portfolio/', views.portfolio, name='portfolio'),
     path('search-coins/', views.search_coins, name='search_coins'),
+    path('profile/', views.profile, name='profile'),
 ]
 
 if settings.DEBUG:

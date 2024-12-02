@@ -1,0 +1,138 @@
+/* Общие стили */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9; /* Светлый фон для всей страницы */
+    color: #333;
+}
+
+
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+nav ul li {
+    margin-right: 20px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Контейнер портфеля */
+.portfolio-container {
+    max-width: 1200px;
+    margin: 80px auto; /* Отступы сверху, чтобы избежать перекрытия header */
+    padding: 20px;
+    background: #fff; /* Белый фон для контента */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Тень для объема */
+}
+
+/* Заголовок */
+.portfolio-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #444;
+}
+
+/* Ошибочное сообщение */
+.error-message {
+    color: #ff4d4d;
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Таблица портфеля */
+.portfolio-table {
+    width: 100%;
+    border-collapse: collapse; /* Убираем двойные границы */
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.portfolio-table th,
+.portfolio-table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd; /* Границы для таблицы */
+    text-align: center;
+}
+
+.portfolio-table thead th {
+    background-color: #333; /* Темный фон для заголовков таблицы */
+    color: #fff; /* Белый текст */
+    font-weight: bold;
+}
+
+.portfolio-table tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Светлый фон для четных строк */
+}
+
+.portfolio-table tbody tr:hover {
+    background-color: #e0f7fa; /* Акцент при наведении */
+}
+
+/* Общая стоимость */
+.total-value {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.total-value h3 {
+    font-size: 1.5rem;
+    color: #2e7d32; /* Зеленый цвет для финансовых значений */
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .portfolio-container {
+        padding: 10px;
+    }
+
+    .portfolio-title {
+        font-size: 1.5rem;
+    }
+
+    .portfolio-table th,
+    .portfolio-table td {
+        font-size: 0.9rem;
+        padding: 8px;
+    }
+
+    .total-value h3 {
+        font-size: 1.2rem;
+    }
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 20px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+
+}

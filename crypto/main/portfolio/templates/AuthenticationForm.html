@@ -4,7 +4,7 @@
 Войти
 {% endblock %}
 {% block content %}
-{% block style %} href="{% static 'style1.css' %}" {% endblock %}
+{% block style %}<link rel="stylesheet" href="{% static 'style1.css' %}">{% endblock %}
 <body>
     <form method="post" class="centered-form">
     {% csrf_token %}

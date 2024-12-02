@@ -19,3 +19,8 @@ class Portfolio(models.Model):
         return self.user.username
 
 
+class PortfolioCoin(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    coin = models.ForeignKey(CoinList, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=20, decimal_places=8, default=0)  # Количество монет
+    price = models.DecimalField(max_digits=20, decimal_places=4, null=True, blank=True)

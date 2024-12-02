@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
-from .models import CoinList, Portfolio
+from .models import CoinList, Portfolio, PortfolioCoin
 
 
 class CryptoCurrencyForm(forms.ModelForm):
@@ -41,3 +41,17 @@ class CustomAuthentication(AuthenticationForm):
     class Meta:
         model = User
         fields = ('username', 'password')
+
+
+class PortfolioCoinForm(forms.Form):
+    coin = forms.ModelMultipleChoiceField(
+        queryset=CoinList.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'select2'}),  # Интеграция select2
+        required=True
+    )
+    amount = forms.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter amount'}),
+        required=True
+    )

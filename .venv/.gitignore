@@ -1,0 +1,44 @@
+# Django settings files
+*.pot
+*.pyc
+__pycache__/
+
+# Media files
+media/
+
+# Local settings
+.env
+.env.*
+local_settings.py
+
+# Database
+db.sqlite3
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and text editor files
+.idea/
+.vscode/
+*.swp
+*~
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Staticfiles
+staticfiles/
+
+# Migrations
+*/migrations/*.py
+!*/migrations/__init__.py
